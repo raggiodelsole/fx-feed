@@ -25,7 +25,10 @@ public class PriceMapperService {
         log.info("Data: {}", csvString);
         var pricesArrayOpt = createPricesArray(csvString);
         if (pricesArrayOpt.isPresent()) {
-            return of(createPriceList(pricesArrayOpt.get()));
+            List<Price> priceList = createPriceList(pricesArrayOpt.get());
+            if (!priceList.isEmpty()) {
+                return of(priceList);
+            }
         }
         log.error("Could not get data from input");
         return empty();
