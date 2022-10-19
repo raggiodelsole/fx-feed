@@ -13,6 +13,9 @@ import java.util.Optional;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
 
+/**
+ * This service is responsible for mapping input into Prices
+ */
 @Slf4j
 @Service
 public class PriceMapperService {
@@ -21,6 +24,12 @@ public class PriceMapperService {
     private final DateTimeFormatter formatter =
             DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss:SSS");
 
+    /**
+     * This method convert string to optional containing list of prices.
+     * It can skip lines which could not convert
+     * @param csvString input for converting
+     * @return optional with list or empty optional
+     */
     public Optional<List<Price>> mapToPrices(String csvString) {
         log.info("Data: {}", csvString);
         var pricesArrayOpt = createPricesArray(csvString);
@@ -35,22 +44,29 @@ public class PriceMapperService {
 
     }
 
-    //106, EUR/USD, 1.1000,1.2000,01-06-2020 12:01:01:001
     private Optional<Price> mapToPrice(String csvString) {
         var priceArray = csvString.split(FIELD_SEPARATOR);
-
         try {
-            return of(Price.builder()
-                    .id(Long.parseLong(priceArray[0].trim()))
-                    .instrumentName(priceArray[1].trim())
-                    .bid(new BigDecimal(priceArray[2].trim()))
-                    .ask(new BigDecimal(priceArray[3].trim()))
-                    .timestamp(LocalDateTime.parse(priceArray[4].trim(), formatter))
-                    .build());
+            return of(createPrice(priceArray));
         } catch (RuntimeException e) {
             log.error("Could not get information from line. Skipping it");
             return empty();
         }
+    }
+
+    private Price createPrice(String[] priceArray) {
+        BigDecimal bid = new BigDecimal(priceArray[2].trim());
+        BigDecimal ask = new BigDecimal(priceArray[3].trim());
+        if(bid.compareTo(ask) > 0){
+            throw new ValidationError("Bid cannot be greater then ask");
+        }
+        return Price.builder()
+                .id(Long.parseLong(priceArray[0].trim()))
+                .instrumentName(priceArray[1].trim())
+                .bid(bid)
+                .ask(ask)
+                .timestamp(LocalDateTime.parse(priceArray[4].trim(), formatter))
+                .build();
     }
 
     private static Optional<String[]> createPricesArray(String csvString) {
@@ -70,7 +86,4 @@ public class PriceMapperService {
         return prices;
     }
 
-    public DateTimeFormatter getFormatter() {
-        return this.formatter;
-    }
 }

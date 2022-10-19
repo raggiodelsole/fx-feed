@@ -10,6 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+/**
+ * This service is responsible for performing listing for message and
+ *
+ */
 @Service
 @RequiredArgsConstructor
 public class PriceListenerService {
@@ -19,6 +24,13 @@ public class PriceListenerService {
     private final Map<Long, Price> wannaBeDb = new HashMap<>(); //This field wants to become a database when it grows up :P
     private List<Price> lastScrapped;
 
+    /**
+     * This method is responsible for operations on prices passed as csvString
+     * converting it to positions and saving to wannaBeDb db mock
+     *  * It add commission and overrides instruments based on id
+     *
+     * @param message is inputString
+     */
     public void onMessage(String message) {
         var prices = priceMapperService.mapToPrices(message);
         prices.ifPresent(this::processNewPrices);
@@ -55,21 +67,21 @@ public class PriceListenerService {
     }
 
     private List<Price> createPricesWithLatestTimestamp(List<Price> prices) {
-        var latestPrices = new HashMap<Long, Price>();
+        var latestPrices = new HashMap<String, Price>();
         for (Price price : prices) {
             if (priceNotPresentOnList(latestPrices, price) || priceHasLatestTimestamp(latestPrices, price)) {
-                latestPrices.put(price.getId(), price);
+                latestPrices.put(price.getInstrumentName(), price);
             }
         }
         return latestPrices.values().stream().toList();
     }
 
-    private static boolean priceHasLatestTimestamp(HashMap<Long, Price> latestPrices, Price price) {
-        return latestPrices.get(price.getId()).getTimestamp().isBefore(price.getTimestamp());
+    private static boolean priceHasLatestTimestamp(HashMap<String, Price> latestPrices, Price price) {
+        return latestPrices.get(price.getInstrumentName()).getTimestamp().isBefore(price.getTimestamp());
     }
 
-    private static boolean priceNotPresentOnList(HashMap<Long, Price> latestPrices, Price price) {
-        return !latestPrices.containsKey(price.getId());
+    private static boolean priceNotPresentOnList(HashMap<String, Price> latestPrices, Price price) {
+        return !latestPrices.containsKey(price.getInstrumentName());
     }
 
     public List<Price> getLastScrapped() {

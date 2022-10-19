@@ -126,4 +126,36 @@ class PriceMapperServiceTest {
                 Arguments.of(multipleLinesWithIncorrectDataBetween)
         );
     }
+
+    @Test
+    @DisplayName("Should skip line when bid is greater then ask")
+    void shouldSkipLineWhenBidIsGreaterThenAsk() {
+        //given
+        var input = " 106, EUR/USD ,1.5000 ,1.2000,01-06-2020 12:01:01:001";
+
+        //when
+        final var prices = priceMapperService.mapToPrices(input);
+
+        //then
+        assertThat(prices).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Should not skip line when bid equal to ask")
+    void shouldNotSkipWhenBidIsEqualToAsk() {
+        //given
+        var input = " 106, EUR/USD ,1.5000 ,1.5000,01-06-2020 12:01:01:001";
+        var expectedLocalDateTime = LocalDateTime.of(2020, 6, 1, 12, 1, 1, 1000000);
+
+        //when
+        final var prices = priceMapperService.mapToPrices(input);
+        final var singlePriceResult = prices.get().get(0);
+
+        //then
+        assertThat(singlePriceResult.getId()).isEqualTo(106);
+        assertThat(singlePriceResult.getInstrumentName()).isEqualTo("EUR/USD");
+        assertThat(singlePriceResult.getBid()).isEqualTo(new BigDecimal("1.5000"));
+        assertThat(singlePriceResult.getAsk()).isEqualTo(new BigDecimal("1.5000"));
+        assertThat(singlePriceResult.getTimestamp()).isEqualTo(expectedLocalDateTime);
+    }
 }

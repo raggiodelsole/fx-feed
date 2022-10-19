@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * This controller displays prices and mock invoking on message
+ */
 @RestController
 @RequiredArgsConstructor
 public class PriceController {
